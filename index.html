@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>E-liquid keverő</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5fbf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Keverő">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1c2430;--mut:#64707f;--ac:#1f5fbf;--acx:#fff;--bd:#d9dee5;--ok:#1d7a3e;--bad:#b3261e;--in:#fff8d6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181e;--card:#1e242c;--tx:#e8ecf1;--mut:#9aa6b5;--ac:#5b9bff;--acx:#0b1220;--bd:#34404d;--ok:#5fd38a;--bad:#ff8a80;--in:#2b2a1a}}
+:root[data-theme="dark"]{--bg:#14181e;--card:#1e242c;--tx:#e8ecf1;--mut:#9aa6b5;--ac:#5b9bff;--acx:#0b1220;--bd:#34404d;--ok:#5fd38a;--bad:#ff8a80;--in:#2b2a1a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:14px}
+h1{font-size:1.35rem;margin:6px 0 12px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;font-weight:600}
+.tabs button.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font-size:1rem;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:.8rem;color:var(--mut)}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--in);color:var(--tx);font:inherit;margin-top:3px}
+.fl{display:grid;grid-template-columns:1fr 68px 62px 36px;gap:6px;margin-bottom:6px;align-items:center}
+.fl input,.fl select{margin:0}
+.fl .x{padding:6px;border:1px solid var(--bd);background:transparent;color:var(--mut);border-radius:8px;font:inherit}
+button.b{padding:9px 14px;border-radius:8px;border:1px solid var(--ac);background:var(--ac);color:var(--acx);font:inherit;font-weight:600}
+button.b.g{background:transparent;color:var(--ac)}
+button.b:disabled{opacity:.5}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--bd)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600;font-size:.8rem}
+tr.tot td{font-weight:700}
+.msg{margin-top:10px;font-weight:600}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.stars{display:inline-flex}
+.stars button{background:none;border:0;font-size:1.6rem;color:var(--bd);padding:0 2px;line-height:1}
+.stars button.on{color:#e6a700}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 16px;border-radius:20px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.mut{color:var(--mut);font-size:.85rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.rn{font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>E-liquid keverő</h1>
+<div class="tabs"><button id="t1" class="on">Keverő</button><button id="t2">Receptek (<span id="cnt">0</span>)</button></div>
+
+<section id="mix">
+ <div class="card"><h2>Alapadatok</h2>
+  <div class="grid" id="inputs"></div>
+  <div class="mut" id="vg" style="margin-top:8px"></div>
+  <details style="margin-top:8px"><summary class="mut">Sűrűségek (g/ml)</summary><div class="grid" id="dens" style="margin-top:8px"></div></details>
+ </div>
+ <div class="card"><h2>Aromák</h2><div id="fls"></div><button class="b g" id="addf">+ Aroma</button></div>
+ <div class="card"><h2>Recept</h2><div id="res"></div></div>
+ <div class="card"><h2>Mentés</h2>
+  <div class="mut" id="edit"></div>
+  <label>Recept neve<input id="nm" placeholder="pl. Eper–krém 3 mg"></label>
+  <div class="row"><span class="mut">Értékelés:</span><span class="stars" id="mstars"></span></div>
+  <label style="margin-top:8px">Jegyzet (érlelés, ízvilág…)<textarea id="nt" rows="3"></textarea></label>
+  <div class="row"><button class="b" id="sv" disabled>Mentés</button><button class="b g" id="svn" disabled>Mentés újként</button><button class="b g" id="nw">Új recept</button></div>
+  <div class="mut" id="stat" style="margin-top:8px">Tárhely csatlakoztatása…</div>
+ </div>
+</section>
+
+<section id="lst" hidden>
+ <div class="card"><div class="grid"><label>Keresés<input id="q" type="search" placeholder="név vagy jegyzet"></label><label>Rendezés<select id="so"><option value="d">Legutóbbi elöl</option><option value="r">Értékelés szerint</option><option value="n">Név szerint</option></select></label></div></div>
+ <div id="list"></div>
+ <div class="card"><h2>Mentés a számítógépre</h2><div class="mut">Az összes receptet egy fájlba mentheted biztonsági másolatnak, és később vissza is töltheted (akár másik gépen is).</div><div class="row"><button class="b" id="exp">Mentés fájlba</button><button class="b g" id="imp">Betöltés fájlból</button><button class="b g" id="lnk">Csatolt fájl megnyitása</button><button class="b g" id="mkf">Új receptfájl létrehozása</button><input type="file" id="fi" accept=".json,application/json" hidden></div><div class="mut" id="fst" style="margin-top:8px"></div><textarea id="bk" rows="6" readonly hidden></textarea><div class="mut" id="bkm" hidden>A letöltés itt nem érhető el: másold ki a fenti szöveget, és mentsd el egy .json végű szövegfájlba.</div></div>
+</section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const el=(t,p={},...k)=>{const e=document.createElement(t);for(const[a,v]of Object.entries(p)){if(a==='class')e.className=v;else if(a.startsWith('on'))e[a]=v;else e.setAttribute(a,v)}k.flat().forEach(c=>e.append(c));return e};
+const fmt=(n,d=2)=>n.toLocaleString('hu-HU',{minimumFractionDigits:d,maximumFractionDigits:d});
+const defaults=()=>({total:100,nic:3,base:20,basePG:50,tgtPG:30,dPG:1.036,dVG:1.261,flavors:[{name:'',pct:8,type:'PG'}]});
+let S=defaults(),curId=null,meta={name:'',rating:0,notes:''},recipes=[],mode=null,col=null,delArm=null;
+
+const FIELDS=[['total','Teljes mennyiség (ml)'],['nic','Cél nikotin (mg/ml)'],['base','Bázis erőssége (mg/ml)'],['basePG','Bázis PG aránya (%)'],['tgtPG','Cél PG arány (%)']];
+const DENS=[['dPG','PG sűrűsége'],['dVG','VG sűrűsége']];
+function numField(k,lab){const i=el('input',{type:'number',inputmode:'decimal',step:'any',id:'f_'+k});i.oninput=()=>{S[k]=parseFloat(i.value)||0;renderResult()};return el('label',{},lab,i)}
+FIELDS.forEach(([k,l])=>$('#inputs').append(numField(k,l)));
+DENS.forEach(([k,l])=>$('#dens').append(numField(k,l)));
+
+function renderFlavors(){
+  const box=$('#fls');box.textContent='';
+  S.flavors.forEach((f,i)=>{
+    const n=el('input',{placeholder:'Aroma neve'});n.value=f.name;n.oninput=()=>{f.name=n.value;renderResult()};
+    const p=el('input',{type:'number',inputmode:'decimal',step:'any',placeholder:'%'});p.value=f.pct||'';p.oninput=()=>{f.pct=parseFloat(p.value)||0;renderResult()};
+    const s=el('select');['PG','VG'].forEach(o=>s.append(el('option',{value:o},o)));s.value=f.type;s.onchange=()=>{f.type=s.value;renderResult()};
+    const x=el('button',{class:'x',onclick:()=>{S.flavors.splice(i,1);renderFlavors();renderResult()}},'✕');
+    box.append(el('div',{class:'fl'},n,p,s,x));
+  });
+  if(!S.flavors.length)box.append(el('div',{class:'mut'},'Nincs aroma hozzáadva.'));
+  $('#addf').disabled=S.flavors.length>=8;
+}
+$('#addf').onclick=()=>{S.flavors.push({name:'',pct:0,type:'PG'});renderFlavors()};
+
+function calc(){
+  const t=S.total,b=S.base;if(!(t>0)||!(b>0))return null;
+  const nic=t*S.nic/b,bp=S.basePG/100,tp=S.tgtPG/100;
+  const fl=S.flavors.map((f,i)=>({n:f.name||'Aroma '+(i+1),ml:t*(f.pct||0)/100,type:f.type})).filter(f=>f.ml>0);
+  const fPG=fl.filter(f=>f.type==='PG').reduce((a,f)=>a+f.ml,0),fVG=fl.filter(f=>f.type==='VG').reduce((a,f)=>a+f.ml,0);
+  const aPG=Math.max(0,t*tp-nic*bp-fPG),aVG=Math.max(0,t*(1-tp)-nic*(1-bp)-fVG);
+  const rows=[{n:'Nikotin bázis',ml:nic,g:nic*(bp*S.dPG+(1-bp)*S.dVG)},{n:'PG (hozzáadandó)',ml:aPG,g:aPG*S.dPG},{n:'VG (hozzáadandó)',ml:aVG,g:aVG*S.dVG}]
+    .concat(fl.map(f=>({n:f.n,ml:f.ml,g:f.ml*(f.type==='VG'?S.dVG:S.dPG)})));
+  const ml=rows.reduce((a,r)=>a+r.ml,0),g=rows.reduce((a,r)=>a+r.g,0);
+  return{rows,ml,g,actNic:nic*b/ml,actPG:(nic*bp+aPG+fPG)/ml*100};
+}
+function renderResult(){
+  $('#vg').textContent='Cél VG arány: '+fmt(100-S.tgtPG,0)+'%';
+  const box=$('#res');box.textContent='';const c=calc();
+  if(!c){box.append(el('div',{class:'mut'},'Add meg a teljes mennyiséget és a bázis erősségét.'));return}
+  const tb=el('table',{},el('tr',{},el('th',{},'Összetevő'),el('th',{},'ml'),el('th',{},'gramm'),el('th',{},'%')));
+  c.rows.forEach(r=>tb.append(el('tr',{},el('td',{},r.n),el('td',{},fmt(r.ml)),el('td',{},fmt(r.g)),el('td',{},fmt(r.ml/c.ml*100,1)))));
+  tb.append(el('tr',{class:'tot'},el('td',{},'Összesen'),el('td',{},fmt(c.ml)),el('td',{},fmt(c.g)),el('td',{},'100,0')));
+  box.append(tb);
+  let msg='Rendben',ok=true;
+  if(S.nic>S.base){msg='FIGYELEM: a cél erősség nagyobb, mint a bázis erőssége';ok=false}
+  else if(Math.abs(c.ml-S.total)>0.01||Math.abs(c.actPG-S.tgtPG)>0.1){msg='FIGYELEM: a cél PG/VG arány nem érhető el (túl sok PG vagy VG az aromában/bázisban)';ok=false}
+  box.append(el('div',{class:'mut',style:'margin-top:8px'},'Tényleges: '+fmt(c.actNic)+' mg/ml · '+fmt(c.actPG,1)+'% PG / '+fmt(100-c.actPG,1)+'% VG'));
+  box.append(el('div',{class:'msg '+(ok?'ok':'bad')},msg));
+}
+
+function stars(val,pick){
+  const w=el('span',{class:'stars'});
+  for(let i=1;i<=5;i++)w.append(el('button',{class:i<=val?'on':'',title:i+' csillag',onclick:()=>pick(i===val?0:i)},'★'));
+  return w;
+}
+function syncMeta(){
+  $('#nm').value=meta.name;$('#nt').value=meta.notes;
+  const st=$('#mstars');st.textContent='';st.append(stars(meta.rating,n=>{meta.rating=n;syncMeta()}));
+  $('#edit').textContent=curId?'Szerkesztés alatt: '+(meta.name||'névtelen recept'):'Új recept';
+}
+$('#nm').oninput=e=>{meta.name=e.target.value};
+$('#nt').oninput=e=>{meta.notes=e.target.value};
+function syncAll(){
+  [...FIELDS,...DENS].forEach(([k])=>{$('#f_'+k).value=S[k]});
+  renderFlavors();renderResult();syncMeta();
+}
+
+/* tárolás */
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function saveLocal(){try{localStorage.setItem('eliquid_v1',JSON.stringify(recipes))}catch(e){}writeFile()}
+function loadLocal(){try{recipes=JSON.parse(localStorage.getItem('eliquid_v1')||'[]')}catch(e){recipes=[]}renderList()}
+async function persist(rec,id){
+  if(mode==='cloud'){await col.doc(id).set(rec);return}
+  const full=Object.assign({id},rec),i=recipes.findIndex(r=>r.id===id);
+  if(i>=0)recipes[i]=full;else recipes.push(full);saveLocal();renderList();
+}
+async function remove(id){
+  if(mode==='cloud'){await col.doc(id).delete();return}
+  recipes=recipes.filter(r=>r.id!==id);saveLocal();renderList();
+}
+async function rate(id,n){
+  try{
+    if(mode==='cloud'){await col.doc(id).update({rating:n})}
+    else{const r=recipes.find(x=>x.id===id);if(r){r.rating=n;saveLocal();renderList()}}
+    if(id===curId){meta.rating=n;syncMeta()}
+  }catch(e){toast('Nem sikerült menteni')}
+}
+async function save(asNew){
+  const id=(!asNew&&curId)?curId:uid();
+  const rec={name:meta.name.trim()||'Névtelen recept',rating:meta.rating,notes:meta.notes,updated:Date.now(),state:JSON.stringify(S)};
+  try{await persist(rec,id);curId=id;meta.name=rec.name;syncMeta();toast('Elmentve')}
+  catch(e){toast('Nem sikerült menteni')}
+}
+$('#sv').onclick=()=>save(false);
+$('#svn').onclick=()=>save(true);
+$('#nw').onclick=()=>{S=defaults();curId=null;meta={name:'',rating:0,notes:''};syncAll()};
+
+function summary(st){return fmt(st.total,0)+' ml · '+fmt(st.nic,1)+' mg/ml · '+fmt(st.tgtPG,0)+'/'+fmt(100-st.tgtPG,0)+' PG/VG'}
+function renderList(){
+  $('#cnt').textContent=recipes.length;
+  const box=$('#list');box.textContent='';
+  if(!recipes.length){box.append(el('div',{class:'card mut'},'Még nincs mentett recept. Állíts össze egyet a Keverő fülön, és mentsd el.'));return}
+  const q=($('#q').value||'').trim().toLowerCase(),so=$('#so').value;
+  const cmp={d:(a,b)=>(b.updated||0)-(a.updated||0),r:(a,b)=>(b.rating||0)-(a.rating||0)||(b.updated||0)-(a.updated||0),n:(a,b)=>(a.name||'').localeCompare(b.name||'','hu')}[so];
+  const shown=recipes.filter(r=>!q||((r.name||'')+' '+(r.notes||'')).toLowerCase().includes(q)).sort(cmp);
+  if(!shown.length)box.append(el('div',{class:'card mut'},'Nincs találat.'));
+  shown.forEach(r=>{
+    let st=null;try{st=JSON.parse(r.state)}catch(e){}
+    const del=el('button',{class:'b g'},delArm===r.id?'Biztosan törlöd?':'Törlés');
+    del.onclick=async()=>{
+      if(delArm!==r.id){delArm=r.id;renderList();return}
+      delArm=null;try{await remove(r.id);if(curId===r.id)curId=null;syncMeta();toast('Törölve')}catch(e){toast('Nem sikerült törölni')}
+    };
+    const card=el('div',{class:'card'},
+      el('div',{class:'rn'},r.name||'Névtelen recept'),
+      el('div',{class:'mut'},st?summary(st):'Hibás adat'),
+      stars(r.rating||0,n=>rate(r.id,n)));
+    if(r.notes)card.append(el('div',{class:'mut',style:'margin-top:6px'},r.notes));
+    card.append(el('div',{class:'row'},el('button',{class:'b',onclick:()=>load(r)},'Betöltés'),del));
+    box.append(card);
+  });
+}
+function load(r){
+  let st;try{st=JSON.parse(r.state)}catch(e){toast('Hibás recept');return}
+  S=Object.assign(defaults(),st);curId=r.id;
+  meta={name:r.name||'',rating:r.rating||0,notes:r.notes||''};
+  syncAll();show('mix');window.scrollTo(0,0);
+}
+
+function show(w){
+  $('#mix').hidden=w!=='mix';$('#lst').hidden=w!=='lst';
+  $('#t1').className=w==='mix'?'on':'';$('#t2').className=w==='lst'?'on':'';
+}
+$('#t1').onclick=()=>show('mix');
+$('#t2').onclick=()=>{delArm=null;renderList();show('lst')};
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1800)}
+
+$('#q').oninput=()=>renderList();$('#so').onchange=()=>renderList();
+let fh=null;
+const FT=[{description:'Receptek (JSON)',accept:{'application/json':['.json']}}];
+const stamp=()=>({app:'eliquid',version:1,recipes:recipes.map(({id,name,rating,notes,updated,state})=>({id,name,rating,notes,updated,state}))});
+function fstat(){$('#fst').textContent=fh?'Automatikus mentés ide: '+fh.name:'Nincs fájl csatolva: a receptek csak a böngészőben tárolódnak. Csatolj egy receptfájlt (pl. a pendrive-on), hogy oda is automatikusan mentsen.'}
+async function writeFile(){
+  if(!fh)return;
+  try{const w=await fh.createWritable();await w.write(JSON.stringify(stamp(),null,2));await w.close()}
+  catch(e){toast('A fájlba mentés nem sikerült')}
+}
+$('#exp').onclick=()=>{
+  if(!recipes.length){toast('Nincs mit menteni');return}
+  const a=el('a',{href:URL.createObjectURL(new Blob([JSON.stringify(stamp(),null,2)],{type:'application/json'})),download:'eliquid-receptek-'+new Date().toISOString().slice(0,10)+'.json'});
+  document.body.append(a);a.click();a.remove();toast('Fájl letöltve');
+};
+async function importText(text){
+  const j=JSON.parse(text);const arr=Array.isArray(j.recipes)?j.recipes:[];let n=0;
+  for(const r of arr){
+    if(!r||typeof r.state!=='string')continue;
+    try{JSON.parse(r.state)}catch(x){continue}
+    const id=typeof r.id==='string'&&/^[\w-]{1,40}$/.test(r.id)?r.id:uid();
+    await persist({name:String(r.name||'Névtelen recept').slice(0,100),rating:Math.min(5,Math.max(0,parseInt(r.rating)||0)),notes:String(r.notes||'').slice(0,2000),updated:Number(r.updated)||Date.now(),state:r.state},id);n++;
+  }
+  return n;
+}
+$('#imp').onclick=()=>$('#fi').click();
+$('#fi').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const n=await importText(await f.text());toast(n?n+' recept betöltve':'Nem található recept a fájlban')}
+  catch(x){toast('A fájl nem olvasható')}
+};
+$('#lnk').onclick=async()=>{
+  if(!window.showOpenFilePicker){toast('Ez a böngésző nem támogatja (használj Chrome-ot vagy Edge-et), vagy használd a Mentés/Betöltés fájlból gombot');return}
+  try{
+    const [h]=await showOpenFilePicker({types:FT});
+    if(await h.requestPermission({mode:'readwrite'})!=='granted')return;
+    const n=await importText(await (await h.getFile()).text());
+    fh=h;await writeFile();fstat();toast('Csatolva, '+n+' recept beolvasva');
+  }catch(e){if(!e||e.name!=='AbortError')toast('A fájl csatolása nem sikerült')}
+};
+$('#mkf').onclick=async()=>{
+  if(!window.showSaveFilePicker){toast('Ez a böngésző nem támogatja (használj Chrome-ot vagy Edge-et), vagy használd a Mentés fájlba gombot');return}
+  try{
+    const h=await showSaveFilePicker({suggestedName:'eliquid-receptek.json',types:FT});
+    fh=h;await writeFile();fstat();toast('Receptfájl létrehozva');
+  }catch(e){if(!e||e.name!=='AbortError')toast('A fájl létrehozása nem sikerült')}
+};
+mode='local';syncAll();loadLocal();fstat();
+$('#stat').textContent='A receptek ebben a böngészőben tárolódnak, a csatolt fájlba pedig automatikusan mentődnek.';
+$('#sv').disabled=false;$('#svn').disabled=false;
+if("serviceWorker" in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
