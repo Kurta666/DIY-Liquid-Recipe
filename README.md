@@ -1,2 +1,2 @@
 # DIY-Liquid-Recipe
-Liquid kotyvasztó
+Liquid kotyvasztó és Tekerősegéd
