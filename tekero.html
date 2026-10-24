@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tekerő segéd</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5fbf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f6f4;--fg:#1d1d1b;--card:#fff;--bd:#d8d8d2;--ac:#c2410c;--mut:#6b6b66;--ok:#15803d;--bad:#dc2626;--okbg:#dcfce7;--badbg:#fee2e2}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--fg:#ecece8;--card:#222220;--bd:#3a3a36;--ac:#fb923c;--mut:#9a9a92;--ok:#4ade80;--bad:#f87171;--okbg:#14532d;--badbg:#7f1d1d}}
+*{box-sizing:border-box}
+body{margin:0;font:15px system-ui,sans-serif;background:var(--bg);color:var(--fg);padding:14px;max-width:960px;margin:auto}
+h1{font-size:20px;margin:4px 0 12px}h2{font-size:16px;margin:0 0 10px}
+a.nav{display:inline-block;color:var(--ac);text-decoration:none;font-weight:600;margin-bottom:6px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:4px 18px}
+label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:5px 0}
+input,select{width:120px;padding:5px 7px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
+input:disabled{opacity:.45}
+fieldset{border:1px solid var(--bd);border-radius:8px;margin:8px 0;padding:2px 10px 6px}
+legend{color:var(--mut);font-size:12px;padding:0 4px}
+.res{margin-top:10px;line-height:1.6}.big{font-size:22px;font-weight:700}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.mut{color:var(--mut);font-size:13px}
+table{border-collapse:collapse;font-size:13px;width:100%}
+td,th{border:1px solid var(--bd);padding:4px 5px;text-align:center}
+td.g{background:var(--okbg)}td.r{background:var(--badbg);color:var(--bad)}
+.sc{overflow-x:auto}
+button{padding:7px 12px;border:0;border-radius:8px;background:var(--ac);color:#fff;font:inherit;font-weight:600;cursor:pointer;margin:4px 4px 0 0}
+</style>
+</head>
+<body>
+<a class="nav" href="./">← E-liquid keverő</a>
+<h1>Tekerő segéd</h1>
+
+<div class="card"><h2>1. Tekercs és huzalhossz</h2>
+<div class="grid"><div>
+<label>Tekercs típusa<select id="ty"><option value="single">Egyszerű (1 szál)</option><option value="par">Párhuzamos (n szál)</option><option value="twist">Csavart (n szál)</option><option value="clap">Clapton</option></select></label>
+<label>Szálak száma (n)<input id="n" type="number" value="2" min="1"></label>
+<label>Mag átmérő (mm)<input id="core" type="number" value="2.5" step="0.1"></label>
+<label>Lábak hossza összesen (mm)<input id="lg" type="number" value="20"></label>
+<label>Üzemi feszültség (V)<input id="sv" type="number" value="3.7" step="0.1"></label>
+<label>Számolás<select id="md"><option value="turns">Menetszámból ellenállás</option><option value="target">Célellenállásból menetszám</option></select></label>
+<label id="ltn">Menetszám<input id="tn" type="number" value="7" step="0.25"></label>
+<label id="ltr">Cél ellenállás (Ω)<input id="tr" type="number" value="1.2" step="0.05"></label>
+</div><div id="wires"></div></div>
+<div class="res" id="out"></div>
+<div class="mut">Csavart tekercsnél a számolás a szálakat elektromosan párhuzamosnak veszi. Minden érték becslés, tekerés után mérd meg az ellenállást.</div>
+</div>
+
+<div class="card"><h2>2. Biztonságos legkisebb ellenállás</h2>
+<div class="grid"><div>
+<label>Akku legnagyobb feszültsége (V)<input id="bv" type="number" value="4.2" step="0.1"></label>
+<label>Akku folyamatos terhelhetősége (A)<input id="bi" type="number" value="20"></label>
+<label>Biztonsági ráhagyás (%)<input id="bm" type="number" value="20"></label>
+</div></div>
+<div class="res" id="bat"></div>
+<div class="mut">Csak a gyártó hitelesen megadott folyamatos (nem csúcs) értékét használd. Mechanikus (szabályozatlan) eszköznél ez a határ döntő.</div>
+</div>
+
+<div class="card"><h2>3. Sweet spot térkép</h2>
+<div class="grid"><div>
+<label>Cél teljesítmény (W)<input id="sp" type="number" value="15"></label>
+<label>Sáv (± %)<input id="st" type="number" value="15"></label>
+</div></div>
+<div class="mut">A feszültséget az 1. kártyán (Üzemi feszültség) állíthatod.</div>
+<div class="res" id="sw"></div>
+</div>
+
+<div class="card"><h2>4. Ohm törvénye</h2>
+<div class="grid"><div>
+<label>Feszültség (V)<input id="ov" type="number" step="any"></label>
+<label>Áram (A)<input id="oi" type="number" step="any"></label>
+<label>Ellenállás (Ω)<input id="or" type="number" step="any"></label>
+<label>Teljesítmény (W)<input id="op" type="number" step="any"></label>
+</div></div>
+<button id="ocalc">Számol (2 érték kell)</button><button id="oclr">Töröl</button>
+<div class="res mut" id="omsg"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),N=id=>parseFloat($(id).value)||0;
+const MAT={ka:['Kanthal A1',1.45],nc:['NiChrome 80',1.09],ss:['SS316L',0.74],ni:['Nikkel Ni200',0.096],ti:['Titán gr.1',0.55],cust:['Egyedi (Ω/m)',0]};
+const awgD=a=>0.127*Math.pow(92,(36-a)/39);
+
+function wireBlock(p,title,awg){
+  const mats=Object.entries(MAT).map(([k,m])=>'<option value="'+k+'">'+m[0]+'</option>').join('');
+  let aw='<option value="">–</option>';for(let a=22;a<=40;a+=1)aw+='<option value="'+a+'"'+(a===awg?' selected':'')+'>'+a+' AWG</option>';
+  return '<fieldset><legend>'+title+'</legend><label>Anyag<select id="'+p+'m">'+mats+'</select></label>'+
+  '<label>AWG<select id="'+p+'a">'+aw+'</select></label>'+
+  '<label>Átmérő (mm)<input id="'+p+'d" type="number" step="0.001" value="'+awgD(awg).toFixed(3)+'"></label>'+
+  '<label>Egyedi Ω/m<input id="'+p+'o" type="number" step="any" value="" disabled></label>'+
+  '<div class="mut" id="'+p+'i"></div></fieldset>';
+}
+$('wires').innerHTML=wireBlock('w','Fő huzal (mag)',28)+'<div id="cw">'+wireBlock('c','Tekerő huzal (Clapton)',36)+'</div>';
+function getW(p,dOv){
+  const mat=$(p+'m').value,d=dOv||N(p+'d')||0.001;
+  const o=mat==='cust'?N(p+'o'):MAT[mat][1]/(Math.PI*d*d/4);
+  return {d,o};
+}
+function calc(ty,t,core,w,c,n,lg){
+  if(ty==='clap'){
+    const per=Math.PI*(core+w.d+2*c.d),coil=t*per,wl=coil/c.d*Math.PI*(w.d+c.d);
+    const Rc=w.o*coil/1000,Rw=c.o*wl/1000;
+    return {R:1/(1/Rc+1/Rw)+w.o*lg/1000,core:coil+lg,wrap:wl,k:1,width:t*(w.d+2*c.d)};
+  }
+  const k=ty==='single'?1:Math.max(1,Math.round(N('n'))),coil=t*Math.PI*(core+w.d);
+  return {R:w.o*(coil+lg)/1000/k,core:coil+lg,wrap:0,k,width:t*w.d*(ty==='par'?k:(ty==='twist'?0.8*k:1))};
+}
+function rsafe(){return N('bv')/(Math.max(0.1,N('bi'))*(1-N('bm')/100));}
+const f2=x=>x.toFixed(2);
+
+function batt(){
+  const rs=rsafe();
+  $('bat').innerHTML='Legkisebb biztonságos ellenállás: <span class="big">'+f2(rs)+' Ω</span><br><span class="mut">Számítás: '+N('bv')+' V / ('+N('bi')+' A × '+(1-N('bm')/100).toFixed(2)+'). Határ ráhagyás nélkül: '+f2(N('bv')/Math.max(0.1,N('bi')))+' Ω.</span>';
+}
+
+function run(){
+  const ty=$('ty').value,core=N('core'),lg=N('lg');
+  const w=getW('w'),c=getW('c');
+  ['w','c'].forEach(p=>{
+    const ww=getW(p);$(p+'o').disabled=$(p+'m').value!=='cust';
+    $(p+'i').textContent='Ω/m: '+f2(ww.o)+' · átmérő '+ww.d.toFixed(3)+' mm';
+  });
+  $('cw').style.display=ty==='clap'?'':'none';
+  $('n').disabled=ty==='single'||ty==='clap';
+  const tm=$('md').value==='turns';
+  $('ltn').style.display=tm?'':'none';$('ltr').style.display=tm?'none':'';
+  batt();
+  const f=t=>calc(ty,t,core,w,c,0,lg);
+  let t,res,html='';
+  if(tm){t=N('tn');res=f(t);}
+  else{
+    const tr=N('tr');let lo=0.25,hi=400;
+    if(f(lo).R>tr){$('out').innerHTML='<span class="bad">A cél ellenállás kisebb, mint a lábak és a legkisebb tekercs. Csökkentsd a lábakat, vagy válassz vékonyabb drótot.</span>';sweet();return;}
+    for(let i=0;i<60;i++){const m=(lo+hi)/2;f(m).R<tr?lo=m:hi=m;}
+    t=(lo+hi)/2;res=f(t);
+    const tq=Math.round(t*4)/4;
+    html+='Pontos menetszám: <span class="big">'+t.toFixed(2)+'</span> · kerekítve <b>'+tq+'</b> menet → '+f2(f(tq).R)+' Ω<br>';
+  }
+  const rs=rsafe(),V=N('sv'),I=V/res.R;
+  html+=(tm?'Ellenállás: <span class="big">'+f2(res.R)+' Ω</span><br>':'');
+  html+='Vágott hossz: <b>'+res.core.toFixed(0)+' mm</b> '+(ty==='clap'?'mag + <b>'+res.wrap.toFixed(0)+' mm</b> tekerő huzal':(res.k>1?'/ szál, összesen '+(res.core*res.k).toFixed(0)+' mm ('+res.k+' szál)':''))+'<br>';
+  html+='Tekercs hossza kb. '+res.width.toFixed(1)+' mm<br>';
+  html+=res.R<rs?'<span class="bad">⚠ Veszélyes: az ellenállás a biztonságos határ ('+f2(rs)+' Ω) alatt van.</span>':'<span class="ok">✓ A biztonságos határ ('+f2(rs)+' Ω) felett van.</span>';
+  html+='<br><span class="mut">'+V+' V-on: '+I.toFixed(1)+' A, '+(V*I).toFixed(1)+' W</span>';
+  $('out').innerHTML=html;
+  sweet();
+}
+
+function sweet(){
+  const ty=$('ty').value,core=N('core'),lg=N('lg');
+  const c=getW('c'),mat=$('wm').value,wo=N('wo');
+  const P=N('sp'),V=N('sv'),tol=N('st')/100,tg=V*V/Math.max(P,0.1),rs=rsafe();
+  const gs=[24,26,28,30,32,34,36],ts=[];for(let i=3;i<=14;i++)ts.push(i);
+  let h='<div class="sc"><table><tr><th>AWG \\ menet</th>'+ts.map(x=>'<th>'+x+'</th>').join('')+'</tr>',best=[];
+  gs.forEach(a=>{
+    const d=awgD(a),w={d,o:mat==='cust'?wo:MAT[mat][1]/(Math.PI*d*d/4)};
+    h+='<tr><th>'+a+'</th>';
+    ts.forEach(t=>{
+      const R=calc(ty,t,core,w,c,0,lg).R,cls=R<rs?'r':(Math.abs(R-tg)<=tg*tol?'g':'');
+      if(cls==='g')best.push({a,t,R});
+      h+='<td class="'+cls+'" title="'+(V/R).toFixed(1)+' A, '+(V*V/R).toFixed(1)+' W">'+f2(R)+'</td>';
+    });h+='</tr>';
+  });
+  h+='</table></div>';
+  best.sort((x,y)=>Math.abs(x.R-tg)-Math.abs(y.R-tg));
+  h='Cél: <b>'+f2(tg)+' Ω</b> ('+P+' W, '+V+' V). <span class="mut">Zöld: a sávon belül. Piros: a biztonságos határ alatt. Ráhúzva az áram és a teljesítmény látszik.</span>'+h;
+  h+='<div style="margin-top:8px"><b>Legjobb találatok</b> (a fő huzal anyagával és a tekercs típusával):<br>'+
+    (best.slice(0,6).map(b=>b.a+' AWG, '+b.t+' menet → '+f2(b.R)+' Ω, '+(V/b.R).toFixed(1)+' A, '+(V*V/b.R).toFixed(1)+' W').join('<br>')||'<span class="mut">Nincs találat a sávban, bővítsd a sávot, vagy válts anyagot, magot, típust.</span>')+'</div>';
+  $('sw').innerHTML=h;
+}
+
+['w','c'].forEach(p=>{
+  $(p+'a').addEventListener('change',()=>{const a=parseFloat($(p+'a').value);if(a){$(p+'d').value=awgD(a).toFixed(3);}run();});
+  $(p+'d').addEventListener('input',()=>{$(p+'a').value='';});
+});
+const OHM=['ov','oi','or','op'];
+document.querySelectorAll('input,select').forEach(e=>{
+  if(OHM.includes(e.id))return;
+  e.addEventListener('input',run);e.addEventListener('change',run);
+});
+
+/* Ohm */
+const ONAME={ov:'feszültség',oi:'áram',or:'ellenállás',op:'teljesítmény'};
+$('ocalc').onclick=()=>{
+  const v={};OHM.forEach(i=>{const x=parseFloat($(i).value);if(isFinite(x)&&x>0)v[i]=x;});
+  const have=OHM.filter(i=>v[i]!==undefined);
+  if(have.length<2){$('omsg').textContent='Adj meg legalább két pozitív értéket.';return;}
+  const [a,b]=have;let V,I,R,P;
+  const s=new Set([a,b]);
+  if(s.has('ov')&&s.has('oi')){V=v.ov;I=v.oi;R=V/I;P=V*I;}
+  else if(s.has('ov')&&s.has('or')){V=v.ov;R=v.or;I=V/R;P=V*I;}
+  else if(s.has('ov')&&s.has('op')){V=v.ov;P=v.op;I=P/V;R=V/I;}
+  else if(s.has('oi')&&s.has('or')){I=v.oi;R=v.or;V=I*R;P=V*I;}
+  else if(s.has('oi')&&s.has('op')){I=v.oi;P=v.op;V=P/I;R=V/I;}
+  else{R=v.or;P=v.op;I=Math.sqrt(P/R);V=I*R;}
+  $('ov').value=+V.toFixed(4);$('oi').value=+I.toFixed(4);$('or').value=+R.toFixed(4);$('op').value=+P.toFixed(4);
+  $('omsg').textContent=have.length>2?'Több mint két érték volt megadva, az első kettővel számoltam ('+ONAME[a]+', '+ONAME[b]+').':'';
+};
+$('oclr').onclick=()=>{OHM.forEach(i=>$(i).value='');$('omsg').textContent='';};
+run();
+</script>
+</body>
+</html>
