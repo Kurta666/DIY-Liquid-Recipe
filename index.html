@@ -55,7 +55,7 @@ tr.tot td{font-weight:700}
 <div class="wrap">
 <h1>E-liquid keverő</h1>
 <div style="margin:-6px 0 10px"><a href="tekero.html" style="color:var(--ac);font-weight:600;text-decoration:none">Tekerő segéd →</a></div>
-<div class="tabs"><button id="t1" class="on">Keverő</button><button id="t2">Receptek (<span id="cnt">0</span>)</button></div>
+<div class="tabs"><button id="t1" class="on">Keverő</button><button id="t2">Receptek (<span id="cnt">0</span>)</button><button id="t3">Aromák</button></div>
 
 <section id="mix">
  <div class="card"><h2>Alapadatok</h2>
@@ -75,6 +75,22 @@ tr.tot td{font-weight:700}
  </div>
 </section>
 
+<section id="aro" hidden>
+ <div class="card"><h2>Aroma adagolás kereső</h2>
+  <label>Márka vagy aroma neve<input id="aq" type="search" placeholder="pl. Big Mouth, Solub, Inawera, görögdinnye"></label>
+  <div class="mut" style="margin-top:8px">Ajánlott százalék 50/50 PG/VG bázisnál. Az adatok webshopok és fórumok alapján gyűjtöttek (2026. november), tájékoztató jellegűek: mindig az üveg címkéje vagy a gyártó oldala a mérvadó.</div></div>
+ <details class="card"><summary class="rn" style="cursor:pointer">+ Saját aroma hozzáadása</summary>
+  <div class="grid" style="margin-top:10px">
+   <label>Márka<input id="cb" placeholder="pl. Cloud Vapor"></label>
+   <label>Aroma neve<input id="cn" placeholder="pl. Ishigo"></label>
+   <label>Ajánlott % (50/50 bázisnál)<input id="cp" type="number" step="any" inputmode="decimal"></label>
+   <label>Érlelés (nem kötelező)<input id="cs" placeholder="pl. 2–3 nap"></label>
+  </div>
+  <div class="row"><button class="b" id="cadd">Mentés</button></div>
+ </details>
+ <div id="alist"></div>
+</section>
+
 <section id="lst" hidden>
  <div class="card"><div class="grid"><label>Keresés<input id="q" type="search" placeholder="név vagy jegyzet"></label><label>Rendezés<select id="so"><option value="d">Legutóbbi elöl</option><option value="r">Értékelés szerint</option><option value="n">Név szerint</option></select></label></div></div>
  <div id="list"></div>
@@ -87,7 +103,7 @@ tr.tot td{font-weight:700}
 const $=s=>document.querySelector(s);
 const el=(t,p={},...k)=>{const e=document.createElement(t);for(const[a,v]of Object.entries(p)){if(a==='class')e.className=v;else if(a.startsWith('on'))e[a]=v;else e.setAttribute(a,v)}k.flat().forEach(c=>e.append(c));return e};
 const fmt=(n,d=2)=>n.toLocaleString('hu-HU',{minimumFractionDigits:d,maximumFractionDigits:d});
-const defaults=()=>({total:100,nic:3,base:20,basePG:50,tgtPG:30,dPG:1.036,dVG:1.261,flavors:[{name:'',pct:8,type:'PG'}]});
+const defaults=()=>({total:100,nic:0,base:20,basePG:50,tgtPG:50,dPG:1.036,dVG:1.261,flavors:[{name:'',pct:8,type:'PG'}]});
 let S=defaults(),curId=null,meta={name:'',rating:0,notes:''},recipes=[],mode=null,col=null,delArm=null;
 
 const FIELDS=[['total','Teljes mennyiség (ml)'],['nic','Cél nikotin (mg/ml)'],['base','Bázis erőssége (mg/ml)'],['basePG','Bázis PG aránya (%)'],['tgtPG','Cél PG arány (%)']];
@@ -216,11 +232,87 @@ function load(r){
 }
 
 function show(w){
-  $('#mix').hidden=w!=='mix';$('#lst').hidden=w!=='lst';
-  $('#t1').className=w==='mix'?'on':'';$('#t2').className=w==='lst'?'on':'';
+  $('#mix').hidden=w!=='mix';$('#lst').hidden=w!=='lst';$('#aro').hidden=w!=='aro';
+  $('#t1').className=w==='mix'?'on':'';$('#t2').className=w==='lst'?'on':'';$('#t3').className=w==='aro'?'on':'';
 }
 $('#t1').onclick=()=>show('mix');
 $('#t2').onclick=()=>{delArm=null;renderList();show('lst')};
+$('#t3').onclick=()=>{renderAro();show('aro')};
+
+/* Aroma adagolás adatbázis */
+const AR=[];
+const addA=(b,src,list)=>list.forEach(x=>AR.push({b,n:x[0],p:x[1],s:x[2]||'',src,e:x[3]||''}));
+const EST='Becsült: a márka általános értéke, külön adatot nem találtam.';
+addA('Solub','solubarome.fr',[['Gorilla V2 (banán, kókusz, dohány)','S'],['Melon (sárgadinnye)','S','0–10 nap'],['Pomme verte (zöldalma)','S'],['Pastèque (görögdinnye)','S'],['Tabac RY4','S']]);
+addA('Big Mouth','aromes-et-liquides.fr',[['Worms Party',10,'1 hét'],['Pear Infusion',10,'1 hét'],['Yeah Dude',10,'1 hónap'],['Viva Mexico',10,'2–3 nap'],['Sour Power',10],['Cherix Big',10],['Ready Steady',10],['Beast',10],['Bubble Trouble',10],['Frozen Grape',10],['Green Euforia',10],['Pineapple Coconut (Retro Juice)',10],['Salted Caramel Popcorn',10],['JUST Black Grape',10,'',EST]]);
+addA('Chill Pill','aromes-et-liquides.fr',[['Truly Energy Drink',15,'2 hét'],['PinaColado',15],['Pure Adrenaline',15,'2–3 nap'],['Fire Brains Fresh',15,'7 nap'],['Radioactive Worms',15],['Mind Blaster Furious Grape',15,'',EST]]);
+addA('Inawera','aromes-et-liquides.fr',[['Mélange de menthes',2,'1–2 nap'],['Classic Menthol',2],['Classic Brun',2,'1 hónap'],['Classic Gold Ducat',3,'1 hónap'],['Latakia',3,'1 hónap','Az oldal 3% és 4% értéket is említ.'],['Maxx Blend',3,'1 hónap'],['Pink Panther',4,'2–3 nap'],['Red Fruit Mint',4],['Ice Apple',4,'2–3 nap'],['Vanille Bourbon',4],['Vanille',1,'2 hét'],['Réglisse',5,'1 hét'],['Ananas',2,'2–3 nap'],['Cerise',3],['Menthe Eucalyptus',1,'1–2 nap']]);
+addA('Vampire Vape','aromes-et-liquides.fr',[['Heisenberg Grape Ice',15]]);
+addA('Jungle Hit','aromes-et-liquides.fr',[['Grape Berries',8]]);
+addA('Cloud Vapor (Kung Fruits)','aromes-et-liquides.fr',[['Sakuran (cseresznye)',11,'2–3 nap'],['Aroe (aloe vera, citrus)',11],['Ishigo (eper)',12,'2–3 nap','A gyártó 12–14%-ot ír.'],['Pitaya (sárkánygyümölcs)',11,'2–3 nap'],['Prism',15]]);
+addA('Cloud Niners (Exotic Paradise)','aromes-et-liquides.fr',[['Ruthless Pear',15,'2–3 nap'],['Strawberry Guava',15,'2–3 nap'],['Watermelon Lychee',15,'2–3 nap'],['Kiwi Passion Guava',15],['Mango Papaya',15]]);
+addA('A&L Ultimate','aromes-et-liquides.fr',[['Ragnarok (Ragnaros)',5],['Ragnarok Legend',5],['Ragnarok Primal',5],['Ragnarok Zero',5],['Ragnarok X',8,'2–3 nap','Az oldal 8% és 9% értéket is említ.'],['Shinigami',10,'2–3 nap'],['Shinigami Zero',10,'2–3 nap']]);
+const CM='Közösségi kiindulópont egyedi aromaként, keverékben általában kevesebb.';
+addA('TPA','közösségi fórum',[['Strawberry (Ripe)',10,'',CM],['Green Apple',12,'',CM],['Grape',12,'',CM]]);
+addA('Capella','közösségi fórum',[['White Peach',12,'',CM],['Forest Fruit',15,'',CM],['Vanilla Classic',3,'',CM],['Licorice',4,'',CM]]);
+const BR=[
+ {b:'Solub',t:'15% 50/50 bázisnál, 20% 30/70-nél, 10% 70/30-nál (a gyártó oldala szerint, több VG = több aroma).',src:'solubarome.fr'},
+ {b:'Big Mouth',t:'10% (50 csepp / 10 ml) 50/50 bázisnál. Más aránynál a gyártó szerint igazítsd.',src:'aromes-et-liquides.fr'},
+ {b:'Chill Pill',t:'15% 50/50 bázisnál (75 csepp / 10 ml). Több PG-nél egy webshop szerint legalább 12%-ig csökkenthető.',src:'aromes-et-liquides.fr, levapoteur-discount.fr'},
+ {b:'Inawera',t:'Általában 1–5% 50/50 bázisnál, arománként eltér.',src:'aromes-et-liquides.fr'},
+ {b:'A&L Ultimate',t:'Gazdaságos: Ragnarok (Ragnaros) 5%, Ragnarok X 8%, Shinigami 10% 50/50 bázisnál.',src:'aromes-et-liquides.fr'},
+ {b:'Cloud Vapor (Kung Fruits)',t:'Általában 11–12% 50/50 bázisnál (Prism 15%). A Cloud Niners Exotic Paradise aromák 15%.',src:'aromes-et-liquides.fr'},
+ {b:'FlavourArt',t:'Általában 1–10%, érdemes 2%-kal kezdeni.',src:'közösségi fórum'},
+ {b:'TPA (TFA)',t:'Általában 1–10%, érdemes 5%-kal kezdeni.',src:'közösségi fórum'},
+ {b:'Capella',t:'Általában 5–20%, érdemes 5%-kal kezdeni (egyes aromáknál 2%-ról).',src:'közösségi fórum'},
+ {b:'Decadent Vapours',t:'Általában 1–15%.',src:'közösségi fórum'},
+ {b:'Mom & Pops',t:'Általában 10–20%.',src:'közösségi fórum'},
+ {b:'One to One',t:'Általában 5–15%.',src:'közösségi fórum'},
+ {b:'Tasty Puff',t:'Általában 1–5%.',src:'közösségi fórum'}
+];
+const norm=x=>x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const solubPct=()=>Math.min(20,Math.max(10,10+((100-S.tgtPG)-30)*0.25));
+let CU=[];try{CU=JSON.parse(localStorage.getItem('eliquid_aro_v1')||'[]')}catch(e){CU=[]}
+const saveCU=()=>{try{localStorage.setItem('eliquid_aro_v1',JSON.stringify(CU))}catch(e){}};
+let cdel=null;
+function aroCard(a){
+  const pv=a.p==='S'?solubPct():a.p;
+  const line=a.p==='S'?'Most (a cél VG '+fmt(100-S.tgtPG,0)+'%): '+fmt(pv,1)+'% · 50/50-nél 15%':pv+'% (50/50 bázisnál)';
+  const c=el('div',{class:'card'},el('div',{class:'rn'},(a.b?a.b+' – ':'')+a.n),el('div',{},line));
+  if(a.s)c.append(el('div',{class:'mut'},'Érlelés: '+a.s));
+  if(a.e)c.append(el('div',{class:'mut'},a.e));
+  c.append(el('div',{class:'mut'},'Forrás: '+a.src));
+  const row=el('div',{class:'row'},el('button',{class:'b',onclick:()=>addFlavor(a)},'Hozzáadás a keverőhöz'));
+  if(a.c){
+    const d=el('button',{class:'b g'},cdel===a.id?'Biztosan törlöd?':'Törlés');
+    d.onclick=()=>{if(cdel!==a.id){cdel=a.id;renderAro();return}CU=CU.filter(x=>x.id!==a.id);cdel=null;saveCU();renderAro();toast('Törölve')};
+    row.append(d);
+  }
+  c.append(row);return c;
+}
+function renderAro(){
+  const q=norm($('#aq').value.trim()),box=$('#alist');box.textContent='';
+  BR.filter(r=>!q||norm(r.b+' '+r.t).includes(q)).forEach(r=>box.append(el('div',{class:'card'},el('div',{class:'rn'},r.b+' (általános szabály)'),el('div',{},r.t),el('div',{class:'mut'},'Forrás: '+r.src))));
+  if(!q){
+    if(CU.length){box.append(el('h2',{style:'font-size:1rem;margin:14px 0 8px'},'Saját aromák'));CU.forEach(a=>box.append(aroCard(a)))}
+    box.append(el('div',{class:'mut'},'Írd be egy márka vagy aroma nevét a konkrét aromák kereséséhez.'));return;
+  }
+  const hits=CU.concat(AR).filter(a=>norm((a.b||'')+' '+a.n).includes(q)).slice(0,40);
+  if(!hits.length&&!box.children.length)box.append(el('div',{class:'card mut'},'Nincs találat. Add hozzá saját aromaként, vagy nézd meg az üveg címkéjét.'));
+  hits.forEach(a=>box.append(aroCard(a)));
+}
+function addFlavor(a){
+  if(S.flavors.length>=8){toast('Legfeljebb 8 aroma adható hozzá');return}
+  S.flavors.push({name:((a.b?a.b+' ':'')+a.n),pct:a.p==='S'?solubPct():a.p,type:'PG'});
+  renderFlavors();renderResult();show('mix');toast('Aroma hozzáadva');
+}
+$('#cadd').onclick=()=>{
+  const n=$('#cn').value.trim(),p=parseFloat($('#cp').value);
+  if(!n||!(p>0)||p>100){toast('Add meg a nevet és a százalékot (0–100)');return}
+  CU.unshift({id:Date.now().toString(36),c:true,b:$('#cb').value.trim(),n:n.slice(0,80),p,s:$('#cs').value.trim().slice(0,40),src:'saját',e:''});
+  saveCU();['cb','cn','cp','cs'].forEach(i=>$('#'+i).value='');renderAro();toast('Aroma elmentve');
+};
+$('#aq').oninput=renderAro;
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1800)}
 
 $('#q').oninput=()=>renderList();$('#so').onchange=()=>renderList();
